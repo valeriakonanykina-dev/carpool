@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Попутчик — сервис поиска попутчиков</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="screen-auth" class="screen active">
+  <div class="auth-box">
+    <h1>Попутчик</h1>
+    <p class="subtitle">Сервис поиска попутчиков</p>
+
+    <div class="tabs">
+  <button class="tab active" data-mode="login">Регистрация</button>
+  <button class="tab" data-mode="register">Вход</button>
+</div>
+
+    <form id="auth-form">
+      <input id="reg-name" type="text" placeholder="Имя" hidden>
+      <input id="reg-email" type="email" placeholder="Email" required>
+      <input id="reg-pass" type="password" placeholder="Пароль" required minlength="4">
+      <div id="role-picker" style="display:none">
+  <div style="font-size:14px;font-weight:600;color:#334155;margin:8px 0 8px 0;text-align:left">Кто ты?</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;background:#f8fafc">
+      <input type="radio" name="reg-role" value="driver" checked style="width:16px;height:16px;accent-color:#4f6ef7">
+      <span style="font-size:22px">🚗</span>
+      <span style="font-size:14px;font-weight:600;color:#1e293b">Водитель</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;padding:12px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;background:#f8fafc">
+      <input type="radio" name="reg-role" value="passenger" style="width:16px;height:16px;accent-color:#4f6ef7">
+      <span style="font-size:22px">🧳</span>
+      <span style="font-size:14px;font-weight:600;color:#1e293b">Пассажир</span>
+    </label>
+  </div>
+</div>
+      <button type="submit" id="auth-btn">Войти</button>
+    </form>
+
+    <p class="error" id="auth-error"></p>
+    <p class="demo">Демо: <b>demo@mail.ru</b> / <b>1234</b></p>
+  </div>
+</section>
+
+<section id="screen-app" class="screen">
+  <header class="topbar">
+    <div class="logo">Попутчик</div>
+    <nav class="menu">
+      <button data-page="trips" class="active">Поездки</button>
+      <button data-page="search">Поиск</button>
+      <button data-page="create">Создать</button>
+      <button data-page="chat">Чат <span class="badge" id="chat-badge"></span></button>
+      <button data-page="profile">Профиль</button>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" title="Переключить тему">🌙</button>
+<button class="logout" id="logout">Выйти</button>
+  </header>
+
+  <main class="content">
+
+    <div class="page active" id="page-trips">
+      <h2>Все поездки</h2>
+      <div id="trips-list" class="list"></div>
+    </div>
+
+    <div class="page" id="page-search">
+      <h2>Поиск попутчиков</h2>
+      <div class="filter-card">
+        <input id="f-from" placeholder="Откуда">
+        <input id="f-to" placeholder="Куда">
+        <input id="f-date" type="date">
+        <button id="f-search">Найти</button>
+      </div>
+      <div id="search-results" class="list"></div>
+    </div>
+
+    <div class="page" id="page-create">
+      <h2>Создать поездку</h2>
+      <div class="trip-type-picker">
+  <div class="trip-type-title">Выберите тип поездки:</div>
+  <label class="trip-type-option">
+    <input type="radio" name="trip-type" value="driver" checked>
+    <span class="trip-type-icon">🚗</span>
+    <div>
+      <div class="trip-type-name">Я водитель</div>
+      <div class="trip-type-desc">У меня есть машина, готов везти пассажиров</div>
+    </div>
+  </label>
+  <label class="trip-type-option">
+    <input type="radio" name="trip-type" value="companion">
+    <span class="trip-type-icon">🧳</span>
+    <div>
+      <div class="trip-type-name">Ищу попутчиков</div>
+      <div class="trip-type-desc">Есть машина, хочу компанию и разделить расходы</div>
+    </div>
+  </label>
+  <label class="trip-type-option">
+    <input type="radio" name="trip-type" value="seeker">
+    <span class="trip-type-icon">🚕</span>
+    <div>
+      <div class="trip-type-name">Ищу водителя</div>
+      <div class="trip-type-desc">Нет машины, хочу присоединиться к поездке</div>
+    </div>
+  </label>
+</div>
+      <form id="trip-form" class="card-form">
+        <label>Откуда <input id="c-from" required></label>
+        <label>Куда <input id="c-to" required></label>
+        <label>Дата <input id="c-date" type="date" required></label>
+        <label>Время <input id="c-time" type="time" required></label>
+        <label>Свободных мест <input id="c-seats" type="number" min="1" max="8" value="3" required></label>
+        <label>Цена, руб <input id="c-price" type="number" min="0" value="0"></label>
+        <label>Комментарий <textarea id="c-comment" rows="2"></textarea></label>
+        <button type="submit">Опубликовать</button>
+      </form>
+      <p class="error" id="create-msg"></p>
+    </div>
+
+    <div class="page" id="page-chat">
+      <h2>Чат с попутчиком</h2>
+      <div class="chat-layout">
+        <div class="chat-users" id="chat-users"></div>
+        <div class="chat-main">
+          <div class="chat-header" id="chat-header">Выбери собеседника</div>
+          <div class="chat-messages" id="chat-messages"></div>
+          <form class="chat-input" id="chat-form">
+            <input id="chat-text" placeholder="Написать сообщение..." autocomplete="off">
+            <button type="submit">Отпр</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-profile">
+      <h2>Профиль</h2>
+      <div class="profile-card">
+        <div class="avatar" id="p-avatar">?</div>
+        <div>
+          <h3 id="p-name">—</h3>
+          <p id="p-email" class="muted">—</p>
+          <div class="rating">
+            <span id="p-rating">0.0</span>
+            <span class="muted">(<span id="p-reviews-count">0</span> отзывов)</span>
+          </div>
+          
+          <div id="p-role" style="margin-top:8px"></div>
+          <button id="p-role-change" style="margin-top:6px;padding:6px 14px;border:1.5px solid #cbd5e1;background:white;border-radius:8px;cursor:pointer;font-size:13px;color:#334155;font-weight:600">Изменить роль</button>
+
+        </div>
+      </div>
+
+      <h3>Мои поездки как водитель</h3>
+      <div id="p-trips" class="list"></div>
+
+      <h3>Мои заявки как пассажир</h3>
+      <div id="p-bookings" class="list"></div>
+
+      <h3>Запросы на присоединение</h3>
+<div id="p-mate-requests" class="list"></div>
+
+<h3>Мои попутчики</h3>
+<div id="p-mates" class="list"></div>
+
+      <h3>Отзывы обо мне</h3>
+      <div id="p-reviews" class="list"></div>
+    </div>
+
+  </main>
+</section>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close">X</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- МОДАЛКА КАРТЫ МАРШРУТА -->
+<div class="modal" id="map-modal">
+  <div class="modal-box map-modal-box">
+    <button class="modal-close" id="map-modal-close">X</button>
+    <h3 id="map-modal-title">Маршрут</h3>
+    <div id="map-container"></div>
+    <div id="map-info" class="map-info"></div>
+  </div>
+</div>
+<!-- КНОПКА ПОДДЕРЖКИ -->
+<button id="support-btn" title="Чат с поддержкой">
+  <span class="support-icon">💬</span>
+  <span class="support-badge" id="support-badge"></span>
+</button>
+
+<!-- ОКНО ЧАТА ПОДДЕРЖКИ -->
+<div id="support-window" class="support-window">
+  <div class="support-header">
+    <div class="support-header-info">
+      <div class="support-avatar">?</div>
+      <div>
+        <div class="support-title">Поддержка</div>
+        <div class="support-status">Онлайн — отвечаем быстро</div>
+      </div>
+    </div>
+    <button id="support-close" class="support-close">X</button>
+  </div>
+  <div class="support-messages" id="support-messages"></div>
+  <div class="support-quick" id="support-quick"></div>
+  <form class="support-input" id="support-form">
+    <input id="support-text" placeholder="Напишите сообщение..." autocomplete="off">
+    <button type="submit">➤</button>
+  </form>
+</div>
+
+<script>
+(function() {
+  var THEME_KEY = 'cp_theme';
+
+  function applyTheme(theme) {
+    var btn = document.getElementById('theme-toggle');
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      if (btn) btn.textContent = '☀';
+    } else {
+      document.body.classList.remove('dark');
+      if (btn) btn.textContent = '☾';
+    }
+  }
+
+  function toggleTheme() {
+    var current = localStorage.getItem(THEME_KEY) || 'light';
+    var next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+    applyTheme(savedTheme);
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.onclick = toggleTheme;
+    }
+  });
+})();
+</script>
+</body>
+</html>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
