@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Попутчик — сервис поиска попутчиков</title>
+  <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -48,7 +49,9 @@
 
 <section id="screen-app" class="screen">
   <header class="topbar">
-    <div class="logo">Попутчик</div>
+    <div class="logo">
+  <img src="images/logo.jpeg" alt="Попутчик" class="logo-img">
+</div>
     <nav class="menu">
       <button data-page="trips" class="active">Поездки</button>
       <button data-page="search">Поиск</button>
@@ -70,13 +73,20 @@
     <div class="page" id="page-search">
       <h2>Поиск попутчиков</h2>
       <div class="filter-card">
-        <input id="f-from" placeholder="Откуда">
-        <input id="f-to" placeholder="Куда">
-        <input id="f-date" type="date">
-        <button id="f-search">Найти</button>
-      </div>
-      <div id="search-results" class="list"></div>
-    </div>
+  <div class="autocomplete-wrap">
+    <input id="f-from" placeholder="Откуда" autocomplete="off">
+    <div class="autocomplete-list" id="ac-from"></div>
+  </div>
+  <div class="autocomplete-wrap">
+    <input id="f-to" placeholder="Куда" autocomplete="off">
+     <div id="search-results" class="list"></div>
+    <div class="autocomplete-list" id="ac-to"></div>
+  </div>
+  <input id="f-date" type="date">
+  <button id="f-search">Найти</button>
+</div>
+<div id="search-results" class="list"></div>
+</div>
 
     <div class="page" id="page-create">
       <h2>Создать поездку</h2>
@@ -138,9 +148,16 @@
     <div class="page" id="page-profile">
       <h2>Профиль</h2>
       <div class="profile-card">
-        <div class="avatar" id="p-avatar">?</div>
-        <div>
-          <h3 id="p-name">—</h3>
+  <div class="avatar-block">
+    <div class="avatar" id="p-avatar" title="Нажми, чтобы загрузить фото">?</div>
+    <input type="file" id="avatar-input" accept="image/*" style="display:none">
+    <div class="avatar-actions">
+      <button class="avatar-btn" id="avatar-upload-btn">Загрузить фото</button>
+      <button class="avatar-btn danger" id="avatar-remove-btn" style="display:none">Удалить фото</button>
+    </div>
+  </div>
+  <div>
+    <h3 id="p-name">—</h3>
           <p id="p-email" class="muted">—</p>
           <div class="rating">
             <span id="p-rating">0.0</span>

@@ -758,3 +758,114 @@ body, .topbar, .trip-card, .card-form, .filter-card, .profile-card,
 .trip-type-picker, .trip-type-option, .support-window, .support-messages {
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
+/* ====== ЛОГОТИП ====== */
+.logo {
+  display: flex;
+  align-items: center;
+}
+.logo-img {
+  height: 65px;
+  width: auto;
+  display: block;
+}
+/* ====== АВАТАР ====== */
+.avatar {
+  cursor: pointer;
+  transition: 0.2s;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(79, 110, 247, 0.4);
+}
+.avatar.has-photo {
+  color: transparent;
+}
+.avatar.has-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  transition: 0.2s;
+}
+.avatar.has-photo:hover::after {
+  background: rgba(0,0,0,0.4);
+}
+.avatar.has-photo:hover::before {
+  content: "📷";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  z-index: 2;
+}
+/* ====== КНОПКИ АВАТАРА ====== */
+.avatar-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.avatar-btn {
+  padding: 7px 14px;
+  border: 1.5px solid #4f6ef7;
+  background: white;
+  color: #4f6ef7;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.15s;
+}
+.avatar-btn:hover {
+  background: #4f6ef7;
+  color: white;
+}
+.avatar-btn.danger {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+.avatar-btn.danger:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* Тёмная тема */
+body.dark .avatar-btn {
+  background: #1e293b;
+}
+body.dark .avatar-btn:hover {
+  background: #4f6ef7;
+}
+body.dark .avatar-btn.danger {
+  background: #1e293b;
+}
+body.dark .avatar-btn.danger:hover {
+  background: #ef4444;
+}
+/* ====== БЛОК АВАТАРА ====== */
+.avatar-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+.avatar-block .avatar {
+  margin: 0;
+}
+.avatar-block .avatar-actions {
+  flex-direction: column;
+  width: 100%;
+  margin-top: 0;
+}
+.avatar-block .avatar-btn {
+  width: 100%;
+  text-align: center;
+}

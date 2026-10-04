@@ -81,6 +81,7 @@ function startApp() {
   showScreen('screen-app');
   showPage('trips');
   updateChatBadge();
+  renderRoleBadge();
 }
 
 function updateChatBadge() {
@@ -328,6 +329,8 @@ $('chat-form').onsubmit = function(e) {
 function renderProfile() {
   me = findUserById(me.id);
 
+   renderAvatar();
+
   $('p-avatar').textContent = me.name[0].toUpperCase();
   $('p-name').textContent = me.name;
   $('p-email').textContent = me.email;
@@ -489,10 +492,28 @@ function renderProfile() {
       updateUserRole(me.id, newRole);
       me = findUserById(me.id);
       renderProfile();
+      const role = me.role || 'passenger';
+  const roleEmoji = role === 'driver' ? '🚗' : '🧳';
+  const roleName = role === 'driver' ? 'Водитель' : 'Пассажир';
+  const roleEl = document.getElementById('p-role');
+  if (roleEl) {
+    roleEl.innerHTML = '<span class="role-badge ' + role + '">' + roleEmoji + ' ' + roleName + '</span>';
+  }
+  const changeBtn = document.getElementById('p-role-change');
+  if (changeBtn) {
+    changeBtn.textContent = role === 'driver' ? 'Стать пассажиром' : 'Стать водителем';
+    changeBtn.onclick = function() {
+      const newRole = role === 'driver' ? 'passenger' : 'driver';
+      updateUserRole(me.id, newRole);
+      me = findUserById(me.id);
+      renderProfile();
+      renderRoleBadge();
+}
     };
   }
 }
-};
+    };
+  }
 
   
 
@@ -833,7 +854,12 @@ function showRouteOnMap(tripId) {
   document.getElementById('map-modal').classList.add('active');
 
   setTimeout(function() {
-    const map = L.map('map-container');
+    if (window._currentMap) {
+  window._currentMap.remove();
+  window._currentMap = null;
+}
+const map = L.map('map-container');
+window._currentMap = map;
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       attribution: '© Esri',
       maxZoom: 19
@@ -896,4 +922,243 @@ document.addEventListener('DOMContentLoaded', function() {
   if (mapModal) mapModal.onclick = function(e) {
     if (e.target.id === 'map-modal') mapModal.classList.remove('active');
   };
+});
+/* ====== АВТОДОПОЛНЕНИЕ ГОРОДОВ ====== */
+function getCityList() {
+  const seen = {};
+  const list = [];
+  for (const key in CITY_COORDS) {
+    const displayName = key.charAt(0).toUpperCase() + key.slice(1);
+    if (!seen[displayName]) {
+      seen[displayName] = true;
+      list.push(displayName);
+    }
+  }
+  return list.sort();
+}
+
+const ALL_CITIES = getCityList();
+
+function findCities(prefix, limit) {
+  if (!prefix) return [];
+  const p = prefix.toLowerCase().trim();
+  if (!p) return [];
+
+  const startsWith = [];
+  const contains = [];
+
+  for (let i = 0; i < ALL_CITIES.length; i++) {
+    const city = ALL_CITIES[i];
+    const low = city.toLowerCase();
+    if (low.indexOf(p) === 0) {
+      startsWith.push(city);
+    } else if (low.indexOf(p) > 0) {
+      contains.push(city);
+    }
+  }
+
+  return startsWith.concat(contains).slice(0, limit);
+}
+
+function setupAutocomplete(inputId, listId) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  if (!input || !list) return;
+
+  let activeIndex = -1;
+
+  function closeList() {
+    list.classList.remove('open');
+    list.innerHTML = '';
+    activeIndex = -1;
+  }
+
+  function openList(cities) {
+    if (cities.length === 0) {
+      closeList();
+      return;
+    }
+    let html = '';
+    for (let i = 0; i < cities.length; i++) {
+      html += '<div class="autocomplete-item" data-value="' + cities[i] + '">' + cities[i] + '</div>';
+    }
+    list.innerHTML = html;
+    list.classList.add('open');
+    activeIndex = -1;
+
+    const items = list.querySelectorAll('.autocomplete-item');
+    for (let i = 0; i < items.length; i++) {
+      items[i].onclick = function() {
+        input.value = this.dataset.value;
+        closeList();
+      };
+    }
+  }
+
+  input.oninput = function() {
+    const val = input.value.trim();
+    if (!val) {
+      closeList();
+      return;
+    }
+    const cities = findCities(val, 4);
+    openList(cities);
+  };
+
+  input.onkeydown = function(e) {
+    const items = list.querySelectorAll('.autocomplete-item');
+    if (!list.classList.contains('open') || items.length === 0) {
+      if (e.key === 'Escape') closeList();
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+      updateActive(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+      updateActive(items);
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0) {
+        e.preventDefault();
+        input.value = items[activeIndex].dataset.value;
+        closeList();
+      }
+    } else if (e.key === 'Escape') {
+      closeList();
+    }
+  };
+
+  function updateActive(items) {
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.toggle('active', i === activeIndex);
+    }
+  }
+
+  input.onblur = function() {
+    setTimeout(closeList, 150);
+  };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupAutocomplete('f-from', 'ac-from');
+  setupAutocomplete('f-to', 'ac-to');
+});
+/* ====== БЕЙДЖ РОЛИ В ПРОФИЛЕ ====== */
+function renderRoleBadge() {
+  if (!me) return;
+
+  const role = me.role || 'passenger';
+  const roleEmoji = role === 'driver' ? '🚗' : '🧳';
+  const roleName = role === 'driver' ? 'Водитель' : 'Пассажир';
+
+  const roleEl = document.getElementById('p-role');
+  if (roleEl) {
+    roleEl.innerHTML = '<span class="role-badge ' + role + '">' + roleEmoji + ' ' + roleName + '</span>';
+  }
+
+  const changeBtn = document.getElementById('p-role-change');
+  if (changeBtn) {
+    changeBtn.textContent = role === 'driver' ? 'Стать пассажиром' : 'Стать водителем';
+    changeBtn.onclick = function() {
+      const newRole = role === 'driver' ? 'passenger' : 'driver';
+      updateUserRole(me.id, newRole);
+      me = findUserById(me.id);
+      renderRoleBadge();
+    };
+  }
+}
+/* ====== ЗАГРУЗКА АВАТАРА ====== */
+function loadAvatarFile(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const size = 200;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(base64);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleAvatarClick() {
+  const input = document.getElementById('avatar-input');
+  if (input) input.click();
+}
+
+function handleAvatarFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('Это не картинка');
+    return;
+  }
+
+  loadAvatarFile(file).then(function(base64) {
+    setAvatar(me.id, base64);
+    renderAvatar();
+  }).catch(function() {
+    alert('Не удалось загрузить фото');
+  });
+}
+
+function renderAvatar() {
+  const av = document.getElementById('p-avatar');
+  if (!av || !me) return;
+
+  const photo = getAvatar(me.id);
+  const removeBtn = document.getElementById('avatar-remove-btn');
+
+  if (photo) {
+    av.style.backgroundImage = 'url(' + photo + ')';
+    av.classList.add('has-photo');
+    av.textContent = '';
+    if (removeBtn) removeBtn.style.display = 'inline-block';
+  } else {
+    av.style.backgroundImage = '';
+    av.classList.remove('has-photo');
+    av.textContent = me.name[0].toUpperCase();
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+function handleAvatarRemove() {
+  if (!me) return;
+  if (!confirm('Удалить фото профиля?')) return;
+  removeAvatar(me.id);
+  renderAvatar();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const av = document.getElementById('p-avatar');
+  const input = document.getElementById('avatar-input');
+  const uploadBtn = document.getElementById('avatar-upload-btn');
+  const removeBtn = document.getElementById('avatar-remove-btn');
+
+  if (av) av.onclick = handleAvatarClick;
+  if (uploadBtn) uploadBtn.onclick = handleAvatarClick;
+  if (removeBtn) removeBtn.onclick = handleAvatarRemove;
+  if (input) {
+    input.onchange = function(e) {
+      handleAvatarFile(e.target.files[0]);
+      e.target.value = '';
+    };
+  }
 });

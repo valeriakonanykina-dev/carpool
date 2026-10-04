@@ -49,6 +49,12 @@ function createUser(name, email, password) {
   set(DB.users, users);
   return user;
 }
+function updateUserRole(userId, role) {
+  const users = getAllUsers().map(function(u) {
+    return u.id === userId ? Object.assign({}, u, { role: role }) : u;
+  });
+  set(DB.users, users);
+}
 
 function login(email, password) {
   const u = findUser(email);
@@ -361,4 +367,27 @@ function deleteTrip(tripId, user) {
   set(MATES_KEY, mates);
 
   return true;
+}
+/* ====== АВАТАРЫ ====== */
+const AVATARS_KEY = 'cp_avatars';
+
+function getAvatars() {
+  return get(AVATARS_KEY, {});
+}
+
+function setAvatar(userId, base64) {
+  const avatars = getAvatars();
+  avatars[userId] = base64;
+  set(AVATARS_KEY, avatars);
+}
+
+function getAvatar(userId) {
+  const avatars = getAvatars();
+  return avatars[userId] || null;
+}
+
+function removeAvatar(userId) {
+  const avatars = getAvatars();
+  delete avatars[userId];
+  set(AVATARS_KEY, avatars);
 }
