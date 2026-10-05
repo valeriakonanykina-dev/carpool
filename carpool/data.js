@@ -34,6 +34,19 @@ function findUserById(id) {
   return null;
 }
 function createUser(name, email, password) {
+   const cleanName = (name || '').trim();
+  if (!cleanName) throw new Error('Введи имя');
+  if (cleanName.length < 3) throw new Error('Имя должно быть минимум 3 символа');
+  if (cleanName.length > 30) throw new Error('Имя слишком длинное');
+  if (!/^[А-Яа-яЁёA-Za-z\s-]+$/.test(cleanName)) {
+    throw new Error('Имя может содержать только буквы, пробел и дефис');
+  }
+   // === ПРОВЕРКА EMAIL ===
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (!cleanEmail) throw new Error('Введи email');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    throw new Error('Email должен быть в формате имя@домен.зона');
+  }
   const users = getAllUsers();
   if (findUser(email)) throw new Error('Такой email уже занят');
   const user = {

@@ -45,6 +45,16 @@ for (let i = 0; i < tabs.length; i++) {
     if (rolePicker) {
       rolePicker.style.display = isReg ? 'block' : 'none';
     }
+  const agreeWrap = document.getElementById('agree-wrap');
+if (agreeWrap) {
+  agreeWrap.style.display = isReg ? 'flex' : 'none';
+  if (!isReg) {
+  const ps = document.getElementById('pass-strength');
+  if (ps) ps.style.display = 'none';
+} else {
+  updatePasswordStrength();
+}
+}  
     $('auth-btn').textContent = isReg ? 'Зарегистрироваться' : 'Войти';
     $('auth-error').textContent = '';
   };
@@ -60,10 +70,18 @@ $('auth-form').onsubmit = function(e) {
 
   try {
     if (mode === 'register') {
-      const name = $('reg-name').value.trim();
-      if (!name) throw new Error('Введи имя');
-      createUser(name, email, pass);
-    }
+  const name = $('reg-name').value.trim();
+  if (!name) throw new Error('Введи имя');
+
+  const agreeCheckbox = document.getElementById('agree-checkbox');
+  if (agreeCheckbox && !agreeCheckbox.checked) {
+    throw new Error('Нужно согласиться с условиями');
+  }
+
+  const roleInput = document.querySelector('input[name="reg-role"]:checked');
+  const role = roleInput ? roleInput.value : 'passenger';
+  createUser(name, email, pass, role);
+}
     me = login(email, pass);
     startApp();
   } catch (err) {
@@ -172,12 +190,7 @@ function renderTrips() {
 }
 
 $('f-search').onclick = function() {
-  const res = searchTrips({
-    from: $('f-from').value.trim(),
-    to: $('f-to').value.trim(),
-    date: $('f-date').value
-  });
-  renderSearchResults(res);
+  applySearchFilters();
 };
 
 function renderSearchResults(list) {
@@ -592,9 +605,9 @@ for (let i = 0; i < menuBtns.length; i++) {
 
 (function init() {
   if (getAllUsers().length === 0) {
-    const demo = createUser('Демо Пользователь', 'demo@mail.ru', '1234');
-    const other1 = createUser('Анна Карпина', 'anna@mail.ru', '1234');
-    const other2 = createUser('Валерия Кочакина', 'lera@mail.ru', '1234');
+    const demo = createUser('Демо Пользователь', 'demo@gmail.com', '1234');
+    const other1 = createUser('Анна Карпина', 'anna@gmail.com', '1234');
+    const other2 = createUser('Валерия Кочакина', 'lera@gmail.com', '1234');
     const today = new Date();
     const tomorrow = new Date(today.getTime() + 86400000).toISOString().slice(0, 10);
     const dayAfter = new Date(today.getTime() + 2 * 86400000).toISOString().slice(0, 10);
@@ -1159,6 +1172,134 @@ document.addEventListener('DOMContentLoaded', function() {
     input.onchange = function(e) {
       handleAvatarFile(e.target.files[0]);
       e.target.value = '';
+    };
+  }
+});
+/* ====== ИНДИКАТОР СИЛЫ ПАРОЛЯ ====== */
+function checkPasswordStrength(password) {
+  if (!password) return { level: 'empty', label: '—' };
+
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 8) score++;
+  if (password.length >= 10) score++;
+  if (/[a-zA-Zа-яА-Я]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Zа-яА-Я0-9]/.test(password)) score++;
+
+  if (password.length < 6 || score <= 2) {
+    return { level: 'weak', label: 'Слабый' };
+  }
+  if (score <= 4) {
+    return { level: 'medium', label: 'Средний' };
+  }
+  return { level: 'strong', label: 'Сильный' };
+}
+
+function updatePasswordStrength() {
+  const pass = document.getElementById('reg-pass');
+  const wrap = document.getElementById('pass-strength');
+  const fill = document.getElementById('pass-fill');
+  const label = document.getElementById('pass-label');
+
+  if (!pass || !wrap || !fill || !label) return;
+
+  const isReg = document.querySelector('.tab.active');
+  if (isReg && isReg.dataset.mode !== 'register') {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const val = pass.value;
+  if (!val) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  const result = checkPasswordStrength(val);
+
+  fill.className = 'pass-fill';
+  label.className = 'pass-label';
+
+  if (result.level === 'weak') {
+    fill.classList.add('weak');
+    label.classList.add('weak');
+  } else if (result.level === 'medium') {
+    fill.classList.add('medium');
+    label.classList.add('medium');
+  } else if (result.level === 'strong') {
+    fill.classList.add('strong');
+    label.classList.add('strong');
+  }
+
+  label.textContent = 'Сила пароля: ' + result.label;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const pass = document.getElementById('reg-pass');
+  if (pass) {
+    pass.oninput = updatePasswordStrength;
+  }
+});
+/* ====== ФИЛЬТР ПО ЦЕНЕ ====== */
+function updatePriceSlider() {
+  const slider = document.getElementById('f-price');
+  const valueEl = document.getElementById('price-value');
+  if (!slider || !valueEl) return;
+
+  const min = Number(slider.min);
+  const max = Number(slider.max);
+  const val = Number(slider.value);
+  const percent = ((val - min) / (max - min)) * 100;
+
+  slider.style.background = 'linear-gradient(to right, #4f6ef7 0%, #4f6ef7 ' + percent + '%, #e2e8f0 ' + percent + '%, #e2e8f0 100%)';
+
+  valueEl.textContent = val === max ? 'без ограничений' : val;
+}
+
+function applySearchFilters() {
+  const from = document.getElementById('f-from').value.trim();
+  const to = document.getElementById('f-to').value.trim();
+  const date = document.getElementById('f-date').value;
+  const maxPrice = Number(document.getElementById('f-price').value);
+  const onlyFree = document.getElementById('f-free').checked;
+
+  let results = searchTrips({ from: from, to: to, date: date });
+
+  if (onlyFree) {
+    results = results.filter(function(t) { return !t.price || t.price === 0; });
+  } else {
+    results = results.filter(function(t) {
+      return !t.price || t.price === 0 || t.price <= maxPrice;
+    });
+  }
+
+  renderSearchResults(results);
+}
+/* ====== ИНИЦИАЛИЗАЦИЯ ФИЛЬТРА ЦЕНЫ ====== */
+document.addEventListener('DOMContentLoaded', function() {
+  const slider = document.getElementById('f-price');
+  const freeCheck = document.getElementById('f-free');
+
+  if (slider) {
+    updatePriceSlider();
+    slider.oninput = function() {
+      updatePriceSlider();
+      applySearchFilters();
+    };
+  }
+
+  if (freeCheck) {
+    freeCheck.onchange = function() {
+      if (this.checked && slider) {
+        slider.disabled = true;
+        slider.style.opacity = '0.4';
+      } else if (slider) {
+        slider.disabled = false;
+        slider.style.opacity = '1';
+      }
+      applySearchFilters();
     };
   }
 });

@@ -21,9 +21,15 @@
 </div>
 
     <form id="auth-form">
-      <input id="reg-name" type="text" placeholder="Имя" hidden>
+      <input id="reg-name" type="text" placeholder="Имя" hidden minlength="3" maxlength="30">
       <input id="reg-email" type="email" placeholder="Email" required>
-      <input id="reg-pass" type="password" placeholder="Пароль" required minlength="4">
+      <input id="reg-pass" type="password" placeholder="Пароль" required minlength="6">
+      <div class="password-strength" id="pass-strength" style="display:none">
+  <div class="pass-bar">
+    <div class="pass-fill" id="pass-fill"></div>
+  </div>
+  <div class="pass-label" id="pass-label">—</div>
+</div>
       <div id="role-picker" style="display:none">
   <div style="font-size:14px;font-weight:600;color:#334155;margin:8px 0 8px 0;text-align:left">Кто ты?</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -39,11 +45,15 @@
     </label>
   </div>
 </div>
+<label class="agree-checkbox" id="agree-wrap" style="display:none">
+  <input type="checkbox" id="agree-checkbox">
+  <span>Я согласен с <a href="#" onclick="alert('Условия использования:\n\n1. Сервис бесплатный.\n2. Мы не несём ответственности за поездки.\n3. Оплата — напрямую водителю.\n4. Данные хранятся локально в вашем браузере.'); return false;">условиями использования</a></span>
+</label>
       <button type="submit" id="auth-btn">Войти</button>
     </form>
 
     <p class="error" id="auth-error"></p>
-    <p class="demo">Демо: <b>demo@mail.ru</b> / <b>1234</b></p>
+    <p class="demo">Демо: <b>demo@gmail.com</b> / <b>1234</b></p>
   </div>
 </section>
 
@@ -79,11 +89,25 @@
   </div>
   <div class="autocomplete-wrap">
     <input id="f-to" placeholder="Куда" autocomplete="off">
-     <div id="search-results" class="list"></div>
     <div class="autocomplete-list" id="ac-to"></div>
   </div>
   <input id="f-date" type="date">
   <button id="f-search">Найти</button>
+
+  <div class="price-filter">
+    <div class="price-filter-header">
+      <span>Цена до: <b id="price-value">20000</b> ₽</span>
+      <label class="price-free-checkbox">
+        <input type="checkbox" id="f-free">
+        <span>Только бесплатные</span>
+      </label>
+    </div>
+    <input type="range" id="f-price" min="0" max="20000" step="100" value="20000">
+    <div class="price-scale">
+      <span>0 ₽</span>
+      <span>20000 ₽</span>
+    </div>
+  </div>
 </div>
 <div id="search-results" class="list"></div>
 </div>
